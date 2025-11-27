@@ -47,9 +47,7 @@ if (typeof __firebase_config !== 'undefined') {
     firebaseConfig = yourFirebaseConfig; // fallback
   }
 } else {
-  firebaseConfig = typeof window !== 'undefined' && window.firebaseConfig
-    ? window.firebaseConfig
-    : yourFirebaseConfig;
+  
 }
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? 
                          __initial_auth_token : null;
