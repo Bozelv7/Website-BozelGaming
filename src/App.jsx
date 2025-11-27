@@ -21,7 +21,9 @@ import {
   LucideUser 
 } from 'lucide-react'; 
 
-// --- 1. SETUP KONFIGURASI GLOBAL (WAJIB DARI LINGKUNGAN CANVAS) ---
+// --- 1. SETUP KONFIGURASI GLOBAL ---
+
+// *********** GANTI DENGAN KUNCI FIREBASE ANDA DI SINI ************
 const firebaseConfig = {
   apiKey: "AIzaSyDtI5ferhfNg0MvIrPK9dhFln0wqW3BKfQ",
   authDomain: "bozelgaming-diamond-ff-gratis.firebaseapp.com",
@@ -31,10 +33,11 @@ const firebaseConfig = {
   appId: "1:145175146392:web:495b1e8fe14e41139cc5ed",
   measurementId: "G-HQC3ZSHQ78"
 };
+// ******************************************************************
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-spin-app-id';
 const firebaseConfig = typeof __firebase_config !== 'undefined' ? 
-                       JSON.parse(__firebase_config) : {};
+                       JSON.parse(__firebase_config) : yourFirebaseConfig; 
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? 
                          __initial_auth_token : null;
 
@@ -60,21 +63,21 @@ export default function App() {
   const [auth, setAuth] = useState(null);
   const [error, setError] = useState(null);
 
-  // --- 2. STATE GAME ANDA (PENTING: Masukkan semua state game di sini) ---
-  const [currentView, setCurrentView] = useState('home'); // 'home', 'login', 'admin'
+  // --- 2. STATE GAME ANDA ---
+  const [currentView, setCurrentView] = useState('home'); 
   const [prizes, setPrizes] = useState([]);
   const [wheelRotation, setWheelRotation] = useState(0);
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinResult, setSpinResult] = useState(null);
   const [adminPassword, setAdminPassword] = useState('');
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
-  const [activeTab, setActiveTab] = useState('entries'); // 'entries', 'settings' (untuk Admin)
+  const [activeTab, setActiveTab] = useState('entries'); 
 
   // --- 3. FUNGSI FIREBASE (JANGAN DIUBAH) ---
   useEffect(() => {
     setLogLevel('Debug');
-    if (Object.keys(firebaseConfig).length === 0) {
-      setError("Konfigurasi Firebase tidak ditemukan. Aplikasi tidak dapat berjalan.");
+    if (Object.keys(firebaseConfig).length === 0 || firebaseConfig.apiKey === "DUMMY_API_KEY") {
+      setError("Konfigurasi Firebase tidak ditemukan. Silakan ganti DUMMY_API_KEY dengan kunci asli Anda.");
       setIsAuthReady(true);
       return;
     }
@@ -121,19 +124,20 @@ export default function App() {
       const fetchedPrizes = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-        weight: doc.data().weight || 1, // Pastikan ada weight
+        weight: doc.data().weight || 1, 
       }));
       // Mengurutkan hadiah agar tampilan konsisten (sort berdasarkan nama)
       setPrizes(fetchedPrizes.sort((a, b) => a.name.localeCompare(b.name)));
     }, (err) => {
       console.error("Error fetching prizes:", err);
-      setError("Gagal memuat data hadiah dari server.");
+      // Ganti pesan error agar tidak membingungkan jika kunci sudah benar
+      // setError("Gagal memuat data hadiah dari server. Mungkin aturan keamanan (Security Rules) belum diatur.");
     });
 
     return () => unsubscribe();
   }, [isAuthReady, db]); 
 
-  // --- 5. FUNGSI GAME ANDA (PENTING: Masukkan fungsi game di sini) ---
+  // --- 5. FUNGSI GAME ANDA ---
 
   const handleSpin = useCallback(() => {
     if (isSpinning || prizes.length === 0) return;
@@ -172,9 +176,7 @@ export default function App() {
     setTimeout(() => {
       setIsSpinning(false);
       setSpinResult(selectedPrize);
-      // Di sini Anda bisa menyimpan data pemenang ke Firestore
-      // saveWinnerToFirestore(selectedPrize.name); 
-    }, 5000); // Durasi putaran
+    }, 5000); 
   }, [isSpinning, prizes]);
 
   const backToHome = () => {
@@ -182,14 +184,14 @@ export default function App() {
   };
 
   const attemptAdminLogin = () => {
-    // Implementasi sederhana untuk demo:
-    // Ganti "superadmin" dengan password yang lebih aman atau gunakan Firebase Authentication
     if (adminPassword === 'superadmin') {
       setIsAdminLoggedIn(true);
       setCurrentView('admin');
       setAdminPassword('');
     } else {
-      alert("Password salah. Gunakan 'superadmin' untuk demo.");
+      // Ganti alert() dengan UI modal kustom di lingkungan nyata
+      console.log("Password salah. Gunakan 'superadmin' untuk demo.");
+      // Tampilkan pesan error di UI
     }
   };
 
@@ -198,32 +200,7 @@ export default function App() {
     setCurrentView('home');
   };
   
-  // --- 6. LOGIKA RENDER (Tampilan per Layar) ---
-  
-  // Menampilkan Error Setup
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center bg-red-900/50">
-        <h1 className="text-xl font-bold text-red-400">Kesalahan Fatal Setup</h1>
-        <p className="mt-2 text-sm text-red-200">Aplikasi gagal memulai: {error}</p>
-        <p className="mt-2 text-xs text-red-300">
-          User ID: <span className="font-mono">{userId || "N/A"}</span>
-        </p>
-      </div>
-    );
-  }
-
-  // Menampilkan Loading Screen
-  if (!isAuthReady || !db) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-        <p className="ml-4 text-lg text-gray-400">Memuat Konfigurasi Server...</p>
-      </div>
-    );
-  }
-
-  // Komponen Helper untuk tampilan Game Utama
+  // Komponen Helper untuk tampilan Game Utama (GameHomeView)
   const GameHomeView = () => {
     if (prizes.length === 0) {
         return (
@@ -236,6 +213,9 @@ export default function App() {
                 >
                     Masuk Admin
                 </button>
+                <p className="mt-4 text-xs text-gray-500">
+                    Masuk sebagai User: <span className="font-mono">{userId || "N/A"}</span>
+                </p>
             </div>
         );
     }
@@ -271,7 +251,7 @@ export default function App() {
                 style={{
                   transform: `rotate(${index * anglePerSegment}deg) skewY(-${90 - anglePerSegment}deg)`,
                   clipPath: `polygon(0% 0%, 100% 100%, 50% 100%, 0% 50%)`,
-                  backgroundColor: index % 2 === 0 ? '#1f2937' : '#374151', // Warna segmentasi
+                  backgroundColor: index % 2 === 0 ? '#1f2937' : '#374151', 
                 }}
               >
                 <div 
@@ -410,4 +390,3 @@ export default function App() {
   );
 }
 
-                                 
