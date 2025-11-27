@@ -514,54 +514,52 @@ function AdminView({ user, appId, db, backToHome, isAuth, setIsAuth, currentPriz
 
 // --- MULAI DARI BARIS 513 (Bagian AdminPanel) ---
 return (
-    <div className="space-y-6 h-full flex flex-col">
-      <div className="flex items-center justify-between border-b border-gray-800 pb-4">
-        <h2 className="text-xl font-bold flex items-center gap-2">
-          <LucideSettings className="w-5 h-5 text-orange-500" /> Dashboard
-        </h2>
-        <div className="flex gap-2">
-          {/* TOMBOL 1: Pemenang */}
-          <button 
-            onClick={() => setActiveTab('entries')}
-            className={`px-3 py-1 rounded text-xs ${activeTab === 'entries' ? 'bg-orange-600 text-white' : 'bg-gray-700 text-gray-300'}`}
-          >
-            Pemenang
-          </button> 
-          
-          {/* TOMBOL 2: Pengaturan Hadiah */}
-          <button 
-            onClick={() => setActiveTab('settings')}
-            className={`px-3 py-1 rounded text-xs ${activeTab === 'settings' ? 'bg-orange-600 text-white' : 'bg-gray-700 text-gray-300'}`}
-          >
-            Pengaturan Hadiah
-          </button> 
-          
-          {/* TOMBOL 3: Kembali ke Beranda */}
-          <button onClick={backToHome} className="px-3 py-1 rounded text-xs bg-red-600 text-white hover:bg-red-700 transition duration-200">
-            Kembali ke Beranda
-          </button>
-        </div>
+  <div className="space-y-6 h-full flex flex-col">
+    <div className="flex items-center justify-between border-b border-gray-800 pb-4">
+      <h2 className="text-xl font-bold flex items-center gap-2">
+        <LucideSettings className="w-5 h-5 text-orange-500" /> Dashboard
+      </h2>
+      <div className="flex gap-2">
+        
+        {/* TOMBOL 1: Pemenang */}
+        <button 
+          onClick={() => setActiveTab('entries')}
+          className={`px-3 py-1 rounded text-xs ${activeTab === 'entries' ? 'bg-orange-600 text-white' : 'bg-gray-700 text-gray-300'}`}
+        >
+          Pemenang
+        </button> 
+        
+        {/* TOMBOL 2: Pengaturan Hadiah */}
+        <button 
+          onClick={() => setActiveTab('settings')}
+          className={`px-3 py-1 rounded text-xs ${activeTab === 'settings' ? 'bg-orange-600 text-white' : 'bg-gray-700 text-gray-300'}`}
+        >
+          Pengaturan Hadiah
+        </button> 
+        
+        {/* TOMBOL 3: Kembali ke Beranda */}
+        <button 
+          onClick={backToHome} 
+          className="px-3 py-1 rounded text-xs bg-red-600 text-white hover:bg-red-700 transition duration-200"
+        >
+          Kembali ke Beranda
+        </button>
       </div>
-
-      {/* Tampilkan konten berdasarkan activeTab (Perlu ditambahkan lagi) */}
-      {activeTab === 'entries' && (
-        // Asumsikan ada komponen atau kode di sini
-        <div>Tampilan Pemenang</div>
-      )}
-      {activeTab === 'settings' && (
-        // Asumsikan ada komponen atau kode di sini
-        <div>Tampilan Pengaturan Hadiah</div>
-      )}
-
     </div>
-  );
-} // <--- PENUTUP FUNGSI AdminPanel (Jika Anda punya fungsi ini)
 
-// --- BARIS PALING AKHIR FILE ANDA (Wajib) ---
+    {/* Tampilkan konten berdasarkan activeTab */}
+    {activeTab === 'entries' && (
+      <div>Tampilan Pemenang</div>
+    )}
+    {activeTab === 'settings' && (
+      <div>Tampilan Pengaturan Hadiah</div>
+    )}
 
-// Pastikan di akhir file Anda ada baris ini, JIKA Anda menggunakan default function:
+  </div>
+);
+}  // <-- Ini MENUTUP fungsi AdminPanel (benar)
+
+// *** TIDAK ADA APA-APA SETELAH INI, selain penutup App ***
+ // penutup function App
+
 export default App;
-// ATAU, jika Anda menggunakan: export default function App() { ...
-// Pastikan baris terakhir adalah kurung kurawal penutup
-
-            
