@@ -1,562 +1,403 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+// Import Wajib untuk Firebase
 import { initializeApp } from 'firebase/app';
 import { 
-  getFirestore, 
-  collection, 
-  addDoc, 
-  query, 
-  where, 
-  getDocs, 
-  serverTimestamp, 
-  orderBy,
-  limit,
-  doc,
-  setDoc,
-  onSnapshot
-} from 'firebase/firestore';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+  getAuth, 
+  signInAnonymously, 
+  signInWithCustomToken, 
+  onAuthStateChanged 
+} from 'firebase/auth';
 import { 
-  LucideGamepad2, 
-  LucideTrophy, 
-  LucideSmartphone, 
-  LucideUser, 
-  LucideCheckCircle, 
-  LucideAlertTriangle, 
-  LucideLock, 
+  getFirestore, 
+  doc, 
+  collection, 
+  query, 
+  onSnapshot,
+  setLogLevel
+} from 'firebase/firestore';
+import { 
   LucideSettings, 
-  LucideDownload, 
-  LucideRefreshCw,
-  LucideSave,
-  LucidePercent
-} from 'lucide-react';
+  LucideLogOut, 
+  LucideUser 
+} from 'lucide-react'; 
 
-// --- KONFIGURASI FIREBASE ---
-const firebaseConfig = JSON.parse(__firebase_config);
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'bozel-event-v2';
+// --- 1. SETUP KONFIGURASI GLOBAL (WAJIB DARI LINGKUNGAN CANVAS) ---
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-spin-app-id';
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? 
+                       JSON.parse(__firebase_config) : {};
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? 
+                         __initial_auth_token : null;
 
-// --- DATA DEFAULT (Jika database kosong) ---
-const DEFAULT_PRIZES = [
-  { id: 1, label: '500💎', value: 500, color: '#ef4444', weight: 1 },   // Sangat Langka
-  { id: 2, label: '355💎', value: 355, color: '#f97316', weight: 5 },   // Langka
-  { id: 3, label: '140💎', value: 140, color: '#eab308', weight: 20 },  // Sedang
-  { id: 4, label: '100💎', value: 100, color: '#3b82f6', weight: 50 },  // Sering
-  { id: 5, label: '70💎',  value: 70,  color: '#a855f7', weight: 100 }, // Paling Sering
-];
+// --- CSS STYLE ---
+const styles = `
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+  body {
+    font-family: 'Inter', sans-serif;
+    background-color: #0d1117; 
+    color: #f0f8ff;
+    min-height: 100vh;
+  }
+  .wheel {
+    transition: transform 5s cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+`;
 
-// --- KOMPONEN UTAMA ---
 export default function App() {
-  const [view, setView] = useState('landing'); 
-  const [user, setUser] = useState(null);
-  const [userData, setUserData] = useState({ name: '', phone: '', consent: false });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [prizeResult, setPrizeResult] = useState(null);
-  const [prizes, setPrizes] = useState(DEFAULT_PRIZES); // State untuk hadiah dinamis
-  
-  // Admin State
-  const [isAuth, setIsAuth] = useState(false);
+  // --- STATE UTAMA UNTUK FIREBASE/AUTENTIKASI ---
+  const [isAuthReady, setIsAuthReady] = useState(false);
+  const [userId, setUserId] = useState(null);
+  const [db, setDb] = useState(null);
+  const [auth, setAuth] = useState(null);
+  const [error, setError] = useState(null);
 
-  // Init Firebase Auth & Listen to Prize Config
+  // --- 2. STATE GAME ANDA (PENTING: Masukkan semua state game di sini) ---
+  const [currentView, setCurrentView] = useState('home'); // 'home', 'login', 'admin'
+  const [prizes, setPrizes] = useState([]);
+  const [wheelRotation, setWheelRotation] = useState(0);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [spinResult, setSpinResult] = useState(null);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [activeTab, setActiveTab] = useState('entries'); // 'entries', 'settings' (untuk Admin)
+
+  // --- 3. FUNGSI FIREBASE (JANGAN DIUBAH) ---
   useEffect(() => {
-    const initApp = async () => {
-      try {
-        if (!auth.currentUser) await signInAnonymously(auth);
-      } catch (e) {
-        console.error("Auth Error", e);
-      }
-    };
-    initApp();
+    setLogLevel('Debug');
+    if (Object.keys(firebaseConfig).length === 0) {
+      setError("Konfigurasi Firebase tidak ditemukan. Aplikasi tidak dapat berjalan.");
+      setIsAuthReady(true);
+      return;
+    }
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        // Listen to Prizes Config Realtime
-        const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'game_config');
-        const unsubscribeConfig = onSnapshot(configRef, (docSnap) => {
-          if (docSnap.exists() && docSnap.data().prizes) {
-            setPrizes(docSnap.data().prizes);
+    try {
+      const app = initializeApp(firebaseConfig);
+      const firestore = getFirestore(app);
+      const firebaseAuth = getAuth(app);
+      setDb(firestore);
+      setAuth(firebaseAuth);
+
+      const unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
+        if (user) {
+          setUserId(user.uid);
+          setIsAuthReady(true);
+          console.log("User terautentikasi:", user.uid);
+        } else {
+          console.log("User tidak terautentikasi, mencoba sign in...");
+          if (initialAuthToken) {
+            await signInWithCustomToken(firebaseAuth, initialAuthToken);
           } else {
-            // Jika belum ada config, gunakan default
-            setPrizes(DEFAULT_PRIZES);
+            await signInAnonymously(firebaseAuth);
           }
-          setLoading(false);
-        }, (err) => {
-          console.log("Config fetch error (using default):", err);
-          setLoading(false);
-        });
-        return () => unsubscribeConfig();
-      } else {
-        setLoading(false);
-      }
-    });
-
-    return () => unsubscribeAuth();
+        }
+      });
+      return () => unsubscribe();
+    } catch (e) {
+      console.error("Firebase Error:", e);
+      setError(e.message);
+      setIsAuthReady(true);
+    }
   }, []);
 
-  // --- LOGIC ---
+  // --- 4. DATA FETCHING DARI FIRESTORE ---
+  useEffect(() => {
+    if (!isAuthReady || !db) return;
 
-  const validatePhone = (phone) => {
-    const regex = /^62\d{8,13}$/;
-    return regex.test(phone);
-  };
+    // Path ke koleksi hadiah (public data)
+    const prizesCollectionPath = `artifacts/${appId}/public/data/prizes`;
+    const q = query(collection(db, prizesCollectionPath));
 
-  const handleStart = async (e) => {
-    e.preventDefault();
-    setError('');
-    
-    if (!userData.name.trim()) return setError('Nama wajib diisi.');
-    if (!validatePhone(userData.phone)) return setError('Nomor WA harus diawali 62 (Contoh: 628123456789).');
-    if (!userData.consent) return setError('Anda harus menyetujui syarat & ketentuan.');
-    
-    setLoading(true);
+    // Mendengarkan perubahan data secara real-time
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedPrizes = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        weight: doc.data().weight || 1, // Pastikan ada weight
+      }));
+      // Mengurutkan hadiah agar tampilan konsisten (sort berdasarkan nama)
+      setPrizes(fetchedPrizes.sort((a, b) => a.name.localeCompare(b.name)));
+    }, (err) => {
+      console.error("Error fetching prizes:", err);
+      setError("Gagal memuat data hadiah dari server.");
+    });
 
-    try {
-      if (!auth.currentUser) await signInAnonymously(auth);
+    return () => unsubscribe();
+  }, [isAuthReady, db]); 
 
-      // Cek Duplikasi (Soft Check)
-      try {
-        const q = query(
-          collection(db, 'artifacts', appId, 'public', 'data', 'participants'),
-          where('phone', '==', userData.phone)
-        );
-        const snapshot = await getDocs(q);
-        if (!snapshot.empty) {
-          setError('Nomor ini sudah pernah melakukan spin!');
-          setLoading(false);
-          return;
-        }
-      } catch (dbError) {
-        console.warn("Skip dup check:", dbError);
-      }
+  // --- 5. FUNGSI GAME ANDA (PENTING: Masukkan fungsi game di sini) ---
 
-      setView('spin');
-    } catch (err) {
-      console.error("Error:", err);
-      setError('Gangguan koneksi.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const handleSpin = useCallback(() => {
+    if (isSpinning || prizes.length === 0) return;
 
-  const saveResult = async (prize) => {
-    if (!auth.currentUser) return;
-    try {
-      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'participants'), {
-        name: userData.name,
-        phone: userData.phone,
-        prize_value: prize.value,
-        prize_label: prize.label,
-        timestamp: serverTimestamp(),
-        verified: false,
-      });
-    } catch (err) {
-      console.error("Save error:", err);
-    }
-  };
+    setIsSpinning(true);
+    setSpinResult(null);
 
-  // --- RENDER ---
+    // Total berat untuk weighted selection
+    const totalWeight = prizes.reduce((sum, item) => sum + item.weight, 0);
+    let randomNum = Math.random() * totalWeight;
 
-  if (loading && !user) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center text-orange-500 gap-4">
-        <LucideRefreshCw className="animate-spin w-8 h-8" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-orange-500 selection:text-white overflow-x-hidden">
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-orange-900/20 to-transparent opacity-50"></div>
-        <div className="absolute bottom-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl"></div>
-      </div>
-
-      <div className="relative z-10 max-w-md mx-auto min-h-screen flex flex-col">
-        <header className="p-4 flex items-center justify-between bg-gray-900/80 backdrop-blur-md sticky top-0 border-b border-gray-800 z-50">
-          <div className="flex items-center gap-2">
-            <div className="bg-orange-600 p-1.5 rounded-lg shadow-lg shadow-orange-500/20">
-              <LucideTrophy className="w-5 h-5 text-white" />
-            </div>
-            <h1 className="font-bold text-lg tracking-tight">BOZEL<span className="text-orange-500">GAMING</span></h1>
-          </div>
-          <button onClick={() => setView(view === 'admin' ? 'landing' : 'admin')} className="text-gray-600 hover:text-white transition p-2">
-            <LucideLock className="w-4 h-4" />
-          </button>
-        </header>
-
-        <main className="flex-grow flex flex-col p-4">
-          {view === 'landing' && (
-            <LandingView 
-              userData={userData} 
-              setUserData={setUserData} 
-              onSubmit={handleStart} 
-              error={error}
-              loading={loading}
-            />
-          )}
-          
-          {view === 'spin' && (
-            <SpinView 
-              prizes={prizes} 
-              onFinish={(prize) => {
-                setPrizeResult(prize);
-                saveResult(prize);
-                setTimeout(() => setView('result'), 1000);
-              }} 
-            />
-          )}
-
-          {view === 'result' && (
-            <ResultView 
-              prize={prizeResult} 
-              userData={userData} 
-            />
-          )}
-
-          {view === 'admin' && (
-            <AdminView 
-              user={user} 
-              appId={appId} 
-              db={db}
-              isAuth={isAuth}
-              setIsAuth={setIsAuth}
-              currentPrizes={prizes}
-              backToHome={() => setView('landing')}
-            />
-          )}
-        </main>
-
-        <footer className="p-4 text-center text-xs text-gray-600 border-t border-gray-800 mt-auto">
-          <p>&copy; 2024 BozelGaming Event.</p>
-        </footer>
-      </div>
-    </div>
-  );
-}
-
-// --- SUB-COMPONENTS ---
-
-function LandingView({ userData, setUserData, onSubmit, error, loading }) {
-  return (
-    <div className="flex flex-col gap-6 animate-fade-in">
-      <div className="text-center py-6 space-y-2">
-        <div className="inline-block px-3 py-1 rounded-full bg-orange-500/10 text-orange-400 text-xs font-bold uppercase tracking-wider border border-orange-500/20 mb-2">
-          Event Terbatas
-        </div>
-        <h2 className="text-4xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-gray-500 drop-shadow-sm">
-          DIAMOND <br/><span className="text-orange-500">GRATIS</span>
-        </h2>
-        <p className="text-gray-400 text-sm">Putar roda keberuntungan dan menangkan hingga 500 Diamond FreeFire sekarang!</p>
-      </div>
-
-      <div className="bg-gray-800/50 border border-gray-700/50 p-6 rounded-2xl backdrop-blur-sm shadow-xl">
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-gray-400 uppercase">Nama Lengkap</label>
-            <div className="relative">
-              <LucideUser className="absolute left-3 top-3.5 w-5 h-5 text-gray-500" />
-              <input
-                type="text"
-                value={userData.name}
-                onChange={(e) => setUserData({...userData, name: e.target.value})}
-                placeholder="Masukkan Nickname"
-                className="w-full bg-gray-900/80 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-orange-500 transition placeholder-gray-600"
-              />
-            </div>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-gray-400 uppercase">Nomor WhatsApp</label>
-            <div className="relative">
-              <LucideSmartphone className="absolute left-3 top-3.5 w-5 h-5 text-gray-500" />
-              <input
-                type="tel"
-                value={userData.phone}
-                onChange={(e) => setUserData({...userData, phone: e.target.value.replace(/\D/g, '')})}
-                placeholder="628xxxxxxxxxx"
-                className="w-full bg-gray-900/80 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-orange-500 transition placeholder-gray-600 font-mono"
-              />
-            </div>
-            <p className="text-[10px] text-gray-500 ml-1">*Gunakan kode negara 62.</p>
-          </div>
-          <div className="flex items-start gap-3 pt-2">
-            <input
-              type="checkbox"
-              id="consent"
-              checked={userData.consent}
-              onChange={(e) => setUserData({...userData, consent: e.target.checked})}
-              className="mt-1 w-4 h-4 rounded border-gray-600 text-orange-500 bg-gray-900"
-            />
-            <label htmlFor="consent" className="text-xs text-gray-400 leading-tight">
-              Saya setuju data saya diproses untuk pengiriman hadiah.
-            </label>
-          </div>
-          {error && (
-            <div className="bg-red-900/20 border border-red-500/50 p-3 rounded-lg flex items-center gap-2 text-red-400 text-sm animate-pulse">
-              <LucideAlertTriangle className="w-4 h-4 flex-shrink-0" />
-              {error}
-            </div>
-          )}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-bold py-4 rounded-xl shadow-lg transform active:scale-95 transition-all disabled:opacity-50 flex justify-center items-center gap-2"
-          >
-            {loading ? <LucideRefreshCw className="animate-spin w-5 h-5" /> : <><LucideGamepad2 className="w-5 h-5" /> MULAI SPIN</>}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-function SpinView({ prizes, onFinish }) {
-  const [spinning, setSpinning] = useState(false);
-  const [rotation, setRotation] = useState(0);
-
-  const startSpin = () => {
-    if (spinning) return;
-    setSpinning(true);
-
-    const totalWeight = prizes.reduce((sum, p) => sum + parseInt(p.weight), 0);
-    let random = Math.random() * totalWeight;
     let selectedPrize = null;
+    let cumulativeWeight = 0;
     
+    // Pilih hadiah berdasarkan weight
     for (const prize of prizes) {
-      if (random < parseInt(prize.weight)) {
+      cumulativeWeight += prize.weight;
+      if (randomNum <= cumulativeWeight) {
         selectedPrize = prize;
         break;
       }
-      random -= parseInt(prize.weight);
     }
     
-    if (!selectedPrize) selectedPrize = prizes[prizes.length - 1];
+    if (!selectedPrize) {
+        // Fallback jika perhitungan gagal (ambil acak)
+        selectedPrize = prizes[Math.floor(Math.random() * prizes.length)];
+    }
 
-    const segmentAngle = 360 / prizes.length;
+    // Hitung posisi putaran
     const prizeIndex = prizes.findIndex(p => p.id === selectedPrize.id);
-    const baseSpins = 360 * 5; 
-    const targetRotation = baseSpins + (360 - (prizeIndex * segmentAngle)) + (Math.random() * (segmentAngle - 10) + 5);
-
-    setRotation(targetRotation);
-
+    const anglePerSegment = 360 / prizes.length;
+    const targetAngle = 360 * 10 + (360 - (prizeIndex * anglePerSegment + anglePerSegment / 2));
+    
+    setWheelRotation(targetAngle);
+    
     setTimeout(() => {
-      setSpinning(false);
-      onFinish(selectedPrize);
-    }, 5000);
+      setIsSpinning(false);
+      setSpinResult(selectedPrize);
+      // Di sini Anda bisa menyimpan data pemenang ke Firestore
+      // saveWinnerToFirestore(selectedPrize.name); 
+    }, 5000); // Durasi putaran
+  }, [isSpinning, prizes]);
+
+  const backToHome = () => {
+    setCurrentView('home');
   };
 
-  return (
-    <div className="flex flex-col items-center justify-center h-full gap-8 py-10">
-      <div className="relative w-72 h-72 md:w-80 md:h-80">
-        <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
-          <div className="w-8 h-10 bg-white clip-path-triangle shadow-xl"></div>
-        </div>
-        <div className="absolute inset-0 rounded-full border-8 border-gray-800 shadow-2xl z-10 pointer-events-none"></div>
-        <div 
-          className="w-full h-full rounded-full overflow-hidden shadow-2xl relative transition-transform cubic-bezier(0.15, 0, 0.2, 1)"
-          style={{ 
-            transform: `rotate(${rotation}deg)`,
-            transitionDuration: '5000ms',
-            background: `conic-gradient(
-              ${prizes.map((p, i) => {
-                const start = (i * 100) / prizes.length;
-                const end = ((i + 1) * 100) / prizes.length;
-                return `${p.color} ${start}% ${end}%`;
-              }).join(', ')}
-            )`
-          }}
-        >
-          {prizes.map((p, i) => (
-            <div 
-              key={p.id}
-              className="absolute w-full h-full text-white font-bold text-sm md:text-base flex justify-center pt-4"
-              style={{ transform: `rotate(${i * (360 / prizes.length)}deg)` }}
-            >
-              <span className="drop-shadow-md tracking-wider mt-2">{p.label}</span>
-            </div>
-          ))}
-        </div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-gradient-to-br from-gray-700 to-gray-900 rounded-full z-20 shadow-inner flex items-center justify-center border-4 border-gray-800">
-           <div className="w-10 h-10 bg-orange-500 rounded-full opacity-20 animate-pulse"></div>
-        </div>
-      </div>
-      <button
-        onClick={startSpin}
-        disabled={spinning}
-        className="w-full max-w-xs bg-orange-600 hover:bg-orange-500 text-white font-bold text-xl py-4 rounded-full shadow-lg transform active:scale-95 transition-all disabled:opacity-50"
-      >
-        {spinning ? 'SEMOGA BERUNTUNG...' : 'PUTAR SEKARANG!'}
-      </button>
-    </div>
-  );
-}
-
-function ResultView({ prize, userData }) {
-  return (
-    <div className="flex flex-col items-center justify-center h-full text-center animate-pop-in space-y-6">
-      <div className="relative">
-        <div className="absolute inset-0 bg-orange-500 blur-3xl opacity-20 animate-pulse"></div>
-        <LucideTrophy className="w-24 h-24 text-yellow-400 relative z-10 drop-shadow-2xl" />
-      </div>
-      <div className="space-y-2">
-        <h2 className="text-3xl font-bold text-white">SELAMAT!</h2>
-        <p className="text-gray-400">Kamu berkesempatan mendapatkan:</p>
-        <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-yellow-600 py-2">
-          {prize?.label || '???'}
-        </div>
-      </div>
-      <div className="bg-gray-800/60 p-6 rounded-xl border border-gray-700 w-full max-w-xs text-left space-y-3">
-        <div className="flex items-center gap-3 mb-2">
-          <LucideCheckCircle className="text-green-500 w-5 h-5" />
-          <span className="font-bold text-green-400 text-sm">Data Tersimpan</span>
-        </div>
-        <p className="text-sm text-gray-300">
-          Halo <span className="text-white font-semibold">{userData.name}</span>, kami akan menghubungi:
-        </p>
-        <div className="bg-black/40 p-3 rounded font-mono text-center text-lg tracking-wider text-orange-400">
-          +{userData.phone}
-        </div>
-      </div>
-      <button onClick={() => window.location.reload()} className="text-gray-500 hover:text-white text-sm mt-8 underline">
-        Kembali ke Awal
-      </button>
-    </div>
-  );
-}
-
-// --- ADMIN PANEL (ENHANCED) ---
-
-function AdminView({ user, appId, db, backToHome, isAuth, setIsAuth, currentPrizes }) {
-  const [activeTab, setActiveTab] = useState('entries'); // 'entries' or 'settings'
-  const [entries, setEntries] = useState([]);
-  const [pass, setPass] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [editedPrizes, setEditedPrizes] = useState([]);
-
-  // Sync edited prizes with current when loading
-  useEffect(() => {
-    if (currentPrizes) setEditedPrizes(currentPrizes);
-  }, [currentPrizes]);
-
-  const handleLogin = (e) => {
-    e.preventDefault();
-    if (pass === 'admin123') {
-      setIsAuth(true);
-      fetchEntries();
+  const attemptAdminLogin = () => {
+    // Implementasi sederhana untuk demo:
+    // Ganti "superadmin" dengan password yang lebih aman atau gunakan Firebase Authentication
+    if (adminPassword === 'superadmin') {
+      setIsAdminLoggedIn(true);
+      setCurrentView('admin');
+      setAdminPassword('');
     } else {
-      alert('Password salah');
+      alert("Password salah. Gunakan 'superadmin' untuk demo.");
     }
   };
 
-  const fetchEntries = async () => {
-    setLoading(true);
-    try {
-      const q = query(
-        collection(db, 'artifacts', appId, 'public', 'data', 'participants'),
-        orderBy('timestamp', 'desc'),
-        limit(50)
-      );
-      const snapshot = await getDocs(q);
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setEntries(data);
-    } catch (error) {
-      console.warn("Index error likely, entries might be empty");
-    } finally {
-      setLoading(false);
-    }
+  const handleAdminLogout = () => {
+    setIsAdminLoggedIn(false);
+    setCurrentView('home');
   };
-
-  const handleWeightChange = (id, newWeight) => {
-    setEditedPrizes(prev => prev.map(p => 
-      p.id === id ? { ...p, weight: parseInt(newWeight) || 0 } : p
-    ));
-  };
-
-  const saveConfig = async () => {
-    setLoading(true);
-    try {
-      const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'game_config');
-      await setDoc(configRef, { prizes: editedPrizes }, { merge: true });
-      alert('Konfigurasi berhasil disimpan! User akan melihat update secara realtime.');
-    } catch (e) {
-      alert('Gagal menyimpan: ' + e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Helper utk hitung %
-  const totalWeight = editedPrizes.reduce((sum, p) => sum + (p.weight || 0), 0);
-
-  if (!isAuth) {
+  
+  // --- 6. LOGIKA RENDER (Tampilan per Layar) ---
+  
+  // Menampilkan Error Setup
+  if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-full space-y-4">
-        <LucideLock className="w-12 h-12 text-gray-600" />
-        <h2 className="text-xl font-bold">Admin Access</h2>
-        <form onSubmit={handleLogin} className="flex gap-2">
-          <input 
-            type="password" 
-            value={pass}
-            onChange={e => setPass(e.target.value)}
-            className="bg-gray-800 border border-gray-700 rounded px-3 py-2"
-            placeholder="Password (admin123)"
-          />
-          <button className="bg-orange-600 px-4 py-2 rounded text-white font-bold">Login</button>
-        </form>
-        <button onClick={backToHome} className="text-gray-500 text-sm">Kembali</button>
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center bg-red-900/50">
+        <h1 className="text-xl font-bold text-red-400">Kesalahan Fatal Setup</h1>
+        <p className="mt-2 text-sm text-red-200">Aplikasi gagal memulai: {error}</p>
+        <p className="mt-2 text-xs text-red-300">
+          User ID: <span className="font-mono">{userId || "N/A"}</span>
+        </p>
       </div>
     );
   }
 
-  // ... (Kode di atas baris 513 tetap sama)
-
-// --- MULAI DARI BARIS 513 (Bagian AdminPanel) ---
-return (
-  <div className="space-y-6 h-full flex flex-col">
-    <div className="flex items-center justify-between border-b border-gray-800 pb-4">
-      <h2 className="text-xl font-bold flex items-center gap-2">
-        <LucideSettings className="w-5 h-5 text-orange-500" /> Dashboard
-      </h2>
-      <div className="flex gap-2">
-        
-        {/* TOMBOL 1: Pemenang */}
-        <button 
-          onClick={() => setActiveTab('entries')}
-          className={`px-3 py-1 rounded text-xs ${activeTab === 'entries' ? 'bg-orange-600 text-white' : 'bg-gray-700 text-gray-300'}`}
-        >
-          Pemenang
-        </button> 
-        
-        {/* TOMBOL 2: Pengaturan Hadiah */}
-        <button 
-          onClick={() => setActiveTab('settings')}
-          className={`px-3 py-1 rounded text-xs ${activeTab === 'settings' ? 'bg-orange-600 text-white' : 'bg-gray-700 text-gray-300'}`}
-        >
-          Pengaturan Hadiah
-        </button> 
-        
-        {/* TOMBOL 3: Kembali ke Beranda */}
-        <button 
-          onClick={backToHome} 
-          className="px-3 py-1 rounded text-xs bg-red-600 text-white hover:bg-red-700 transition duration-200"
-        >
-          Kembali ke Beranda
-        </button>
+  // Menampilkan Loading Screen
+  if (!isAuthReady || !db) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+        <p className="ml-4 text-lg text-gray-400">Memuat Konfigurasi Server...</p>
       </div>
+    );
+  }
+
+  // Komponen Helper untuk tampilan Game Utama
+  const GameHomeView = () => {
+    if (prizes.length === 0) {
+        return (
+            <div className="text-center p-8 bg-gray-800 rounded-xl shadow-2xl">
+                <h2 className="text-2xl font-bold text-yellow-500">Hadiah Belum Ditetapkan</h2>
+                <p className="mt-2 text-gray-400">Silakan masuk sebagai admin untuk menambahkan hadiah.</p>
+                <button
+                    onClick={() => setCurrentView('login')}
+                    className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition duration-200 shadow-md"
+                >
+                    Masuk Admin
+                </button>
+            </div>
+        );
+    }
+    
+    const anglePerSegment = 360 / prizes.length;
+
+    return (
+      <div className="flex flex-col items-center justify-center p-6 w-full max-w-md bg-gray-800 rounded-3xl shadow-2xl">
+        <div className="flex justify-between w-full items-center mb-6">
+            <h1 className="text-3xl font-extrabold text-orange-400">Spin Berhadiah!</h1>
+            <button
+                onClick={() => setCurrentView('login')}
+                className="p-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-full transition duration-200 shadow-lg"
+                title="Masuk sebagai Admin"
+            >
+                <LucideUser className="w-5 h-5" />
+            </button>
+        </div>
+        
+        {/* Pointer Penunjuk */}
+        <div className="w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[20px] border-b-red-500 mb-[-10px] z-10"></div>
+        
+        {/* Roda Putar */}
+        <div className="relative w-72 h-72 rounded-full border-8 border-gray-900 overflow-hidden bg-gray-900 shadow-inner">
+          <div 
+            className="wheel w-full h-full relative" 
+            style={{ transform: `rotate(${wheelRotation}deg)` }}
+          >
+            {prizes.map((prize, index) => (
+              <div
+                key={prize.id}
+                className="absolute w-1/2 h-1/2 origin-bottom-right"
+                style={{
+                  transform: `rotate(${index * anglePerSegment}deg) skewY(-${90 - anglePerSegment}deg)`,
+                  clipPath: `polygon(0% 0%, 100% 100%, 50% 100%, 0% 50%)`,
+                  backgroundColor: index % 2 === 0 ? '#1f2937' : '#374151', // Warna segmentasi
+                }}
+              >
+                <div 
+                  className="absolute text-center text-xs font-semibold p-1 truncate"
+                  style={{
+                    transform: `rotate(${anglePerSegment / 2}deg) skewY(${90 - anglePerSegment}deg) rotate(90deg) translate(-20px, 0)`,
+                    width: '100%',
+                    color: index % 2 === 0 ? '#f0f8ff' : '#000',
+                  }}
+                >
+                  {prize.name}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Tombol Spin */}
+        <button
+          onClick={handleSpin}
+          disabled={isSpinning}
+          className={`mt-6 w-full py-3 text-lg font-bold rounded-xl shadow-xl transition duration-300 ${
+            isSpinning ? 'bg-gray-600 text-gray-400 cursor-not-allowed' : 'bg-orange-500 hover:bg-orange-600 text-white'
+          }`}
+        >
+          {isSpinning ? 'Memutar...' : 'PUTAR RODA'}
+        </button>
+        
+        {/* Hasil Spin */}
+        {spinResult && (
+          <div className="mt-4 p-3 bg-green-900/50 border border-green-700 rounded-lg w-full text-center">
+            <p className="text-green-300 font-semibold">Selamat! Anda memenangkan:</p>
+            <p className="text-xl font-extrabold text-green-200">{spinResult.name}</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+  
+  // Komponen Helper untuk tampilan Login Admin
+  const AdminLoginView = () => (
+    <div className="p-8 w-full max-w-md bg-gray-800 rounded-3xl shadow-2xl">
+      <h2 className="text-2xl font-bold text-orange-400 mb-6 text-center">Login Admin</h2>
+      <input
+        type="password"
+        placeholder="Masukkan Password Admin"
+        value={adminPassword}
+        onChange={(e) => setAdminPassword(e.target.value)}
+        className="w-full p-3 mb-4 bg-gray-700 text-white rounded-lg border border-gray-600 focus:ring-orange-500 focus:border-orange-500"
+      />
+      <button 
+        onClick={attemptAdminLogin}
+        className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition duration-200"
+      >
+        Login
+      </button>
+      <button 
+        onClick={backToHome}
+        className="mt-3 w-full py-3 bg-gray-600 hover:bg-gray-700 text-gray-300 font-bold rounded-xl shadow-lg transition duration-200"
+      >
+        Kembali ke Beranda
+      </button>
     </div>
+  );
+  
+  // Komponen Helper untuk tampilan Dashboard Admin
+  const AdminDashboardView = () => (
+    <div className="space-y-6 h-full flex flex-col w-full max-w-2xl p-6 bg-gray-800 rounded-3xl shadow-2xl">
+      <div className="flex items-center justify-between border-b border-gray-700 pb-4">
+        <h2 className="text-xl font-bold flex items-center gap-2 text-orange-400">
+          <LucideSettings className="w-5 h-5 text-orange-500" /> Dashboard Admin
+        </h2>
+        <div className="flex gap-2 items-center">
+            <span className="text-xs text-gray-400">User ID: <span className="font-mono">{userId.substring(0, 8)}...</span></span>
+            <button 
+                onClick={handleAdminLogout}
+                className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-full transition duration-200 shadow-md"
+                title="Logout Admin"
+            >
+                <LucideLogOut className="w-4 h-4" />
+            </button>
+        </div>
+      </div>
 
-    {/* Tampilkan konten berdasarkan activeTab */}
-    {activeTab === 'entries' && (
-      <div>Tampilan Pemenang</div>
-    )}
-    {activeTab === 'settings' && (
-      <div>Tampilan Pengaturan Hadiah</div>
-    )}
+      {/* Navigasi Tab */}
+      <div className="flex gap-2">
+          <button 
+            onClick={() => setActiveTab('entries')}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${activeTab === 'entries' ? 'bg-orange-600 text-white shadow-inner' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+          >
+            Pemenang
+          </button>
+          <button 
+            onClick={() => setActiveTab('settings')}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${activeTab === 'settings' ? 'bg-orange-600 text-white shadow-inner' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+          >
+            Pengaturan Hadiah ({prizes.length})
+          </button>
+      </div>
 
-  </div>
-);
-}  // <-- Ini MENUTUP fungsi AdminPanel (benar)
+      {/* Konten Tab */}
+      <div className="flex-grow bg-gray-900 p-4 rounded-xl overflow-y-auto">
+        {activeTab === 'entries' && <p className="text-gray-400">-- Tampilan Daftar Pemenang (Belum Diimplementasikan) --</p>}
+        
+        {activeTab === 'settings' && (
+            <div className="space-y-4">
+                <h3 className="text-lg font-bold text-white border-b border-gray-700 pb-2">Daftar Hadiah</h3>
+                {prizes.map(p => (
+                    <div key={p.id} className="flex justify-between items-center p-3 bg-gray-800 rounded-lg border border-gray-700">
+                        <span className="font-semibold text-orange-300">{p.name}</span>
+                        <span className="text-sm text-gray-400">Bobot: {p.weight}</span>
+                        {/* Di sini Anda bisa menambahkan tombol Edit/Hapus */}
+                    </div>
+                ))}
+                {prizes.length === 0 && <p className="text-gray-500 text-center">Belum ada hadiah. Tambahkan di sini.</p>}
+            </div>
+        )}
+      </div>
 
-// *** TIDAK ADA APA-APA SETELAH INI, selain penutup App ***
+      <button onClick={backToHome} className="mt-4 w-full py-3 bg-gray-600 hover:bg-gray-700 text-gray-300 font-bold rounded-xl shadow-lg transition duration-200">
+        Kembali ke Tampilan Utama
+      </button>
+    </div>
+  );
+  
+  // --- RENDERING UTAMA ---
+  return (
+    <>
+      <style>{styles}</style>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gray-900">
+        {currentView === 'home' && <GameHomeView />}
+        {currentView === 'login' && <AdminLoginView />}
+        {currentView === 'admin' && isAdminLoggedIn && <AdminDashboardView />}
+      </div>
+    </>
+  );
+}
+
+                                 
