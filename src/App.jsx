@@ -563,6 +563,5 @@ return (
 export default App;
 // ATAU, jika Anda menggunakan: export default function App() { ...
 // Pastikan baris terakhir adalah kurung kurawal penutup
-} 
 
-              
+            
