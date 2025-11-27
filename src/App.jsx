@@ -22,6 +22,16 @@ import {
 } from 'lucide-react'; 
 
 // --- 1. SETUP KONFIGURASI GLOBAL (WAJIB DARI LINGKUNGAN CANVAS) ---
+const firebaseConfig = {
+  apiKey: "AIzaSyDtI5ferhfNg0MvIrPK9dhFln0wqW3BKfQ",
+  authDomain: "bozelgaming-diamond-ff-gratis.firebaseapp.com",
+  projectId: "bozelgaming-diamond-ff-gratis",
+  storageBucket: "bozelgaming-diamond-ff-gratis.firebasestorage.app",
+  messagingSenderId: "145175146392",
+  appId: "1:145175146392:web:495b1e8fe14e41139cc5ed",
+  measurementId: "G-HQC3ZSHQ78"
+};
+
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-spin-app-id';
 const firebaseConfig = typeof __firebase_config !== 'undefined' ? 
                        JSON.parse(__firebase_config) : {};
