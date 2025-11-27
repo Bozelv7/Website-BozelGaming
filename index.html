@@ -64,12 +64,12 @@
         /* Spinner Wheel Styles */
         .wheel-container {
             position: relative;
-            width: 300px;
-            height: 300px;
+            width: 320px;
+            height: 320px;
             margin: 0 auto;
             border-radius: 50%;
-            border: 4px solid #FF9900;
-            box-shadow: 0 0 20px rgba(255, 153, 0, 0.5);
+            border: 6px solid #FF9900;
+            box-shadow: 0 0 30px rgba(255, 153, 0, 0.4), inset 0 0 20px rgba(0,0,0,0.8);
             overflow: hidden;
         }
 
@@ -87,7 +87,6 @@
             left: 0;
             width: 50%;
             height: 50%;
-            background: transparent; /* Transparent because we use conic-gradient on parent */
             transform-origin: 100% 100%;
             clip-path: polygon(0 0, 100% 0, 100% 100%);
             display: flex;
@@ -97,25 +96,35 @@
 
         .segment-content {
             position: absolute;
-            left: 20%;
-            top: 35%;
+            left: 15%;
+            top: 32%;
             text-align: center;
-            font-weight: bold;
+            font-weight: 900;
             color: #fff;
-            font-size: 16px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            font-size: 20px; 
+            text-shadow: 2px 2px 0px rgba(0,0,0,1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1;
+        }
+        
+        .segment-content small {
+            font-size: 10px;
+            color: #ffd700;
+            margin-top: 2px;
         }
 
         .marker {
             position: absolute;
-            top: -15px;
+            top: -20px;
             left: 50%;
             transform: translateX(-50%);
             width: 0;
             height: 0;
-            border-left: 20px solid transparent;
-            border-right: 20px solid transparent;
-            border-top: 40px solid #FF0000;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-top: 50px solid #FF0000;
             z-index: 10;
             filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5));
         }
@@ -141,6 +150,34 @@
         .animate-glitch:hover {
             animation-play-state: running;
         }
+
+        /* Winner Ticker */
+        .winner-ticker-wrap {
+            overflow: hidden;
+            white-space: nowrap;
+            background: linear-gradient(90deg, transparent, rgba(0,0,0,0.8) 10%, rgba(0,0,0,0.8) 90%, transparent);
+            border-top: 1px solid rgba(255, 153, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 153, 0, 0.2);
+        }
+        .winner-ticker {
+            display: inline-block;
+            animation: marquee 20s linear infinite;
+            padding-left: 100%;
+        }
+        @keyframes marquee {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-100%, 0); }
+        }
+        .winner-item {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 2rem;
+            font-size: 0.8rem;
+            color: #ccc;
+        }
+        .winner-item strong { color: #FF9900; margin-right: 4px; }
+        .winner-item span { color: #4ade80; font-weight: bold; margin-left: 4px; }
+
     </style>
 </head>
 <body class="text-gray-200 min-h-screen flex flex-col">
@@ -161,11 +198,22 @@
         
         <!-- Hero Section -->
         <div id="landing-section" class="w-full text-center space-y-6 animate-fade-in pb-10">
-            <div class="space-y-2 mb-8">
+            <div class="space-y-2 mb-6">
                 <h1 class="ff-header text-4xl md:text-5xl text-white animate-glitch">DIAMOND GRATIS <br><span class="text-orange-500">FREEFIRE</span></h1>
                 <p class="text-gray-300 text-sm md:text-base bg-black/50 inline-block px-4 py-1 rounded-full border border-orange-500/30">
-                    <i class="fa-solid fa-gift mr-2 text-orange-400"></i>Ikut spin & menangkan hingga 500💎!
+                    <i class="fa-solid fa-gift mr-2 text-orange-400"></i>Event Resmi BozelGaming
                 </p>
+            </div>
+
+            <!-- Realtime Winners Ticker -->
+            <div class="w-full mb-6">
+                <div class="text-[10px] text-left pl-2 text-orange-400 font-bold uppercase mb-1 tracking-widest">Live Winners <span class="animate-pulse">●</span></div>
+                <div class="winner-ticker-wrap py-2">
+                    <div class="winner-ticker" id="winner-marquee">
+                        <!-- Placeholder, will be replaced by JS -->
+                        <div class="winner-item">Loading live data...</div>
+                    </div>
+                </div>
             </div>
 
             <!-- Registration Form -->
@@ -189,13 +237,13 @@
                             <input type="tel" id="whatsapp" required placeholder="628xxxxxxxx" pattern="62[0-9]+" title="Gunakan format internasional: 628..."
                                 class="w-full bg-black/60 border border-gray-700 rounded-lg py-2.5 pl-10 pr-4 text-white focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 transition-colors">
                         </div>
-                        <p class="text-[10px] text-gray-500 mt-1">*Mulai dengan 62, tanpa 0 di depan.</p>
+                        <p class="text-[10px] text-gray-500 mt-1">*Wajib awalan 62 (bukan 08). Untuk konfirmasi hadiah.</p>
                     </div>
 
                     <div class="flex items-start gap-2 pt-2">
                         <input type="checkbox" id="agree" required class="mt-1 accent-orange-500 w-4 h-4">
                         <label for="agree" class="text-xs text-gray-400 leading-tight">
-                            Saya setuju dihubungi via WhatsApp & data disimpan sesuai <a href="#" onclick="togglePrivacy(); return false;" class="text-orange-400 hover:underline">Privacy Policy</a>.
+                            Saya setuju data saya diproses untuk pengiriman hadiah & setuju dengan <a href="#" onclick="togglePrivacy(); return false;" class="text-orange-400 hover:underline">Aturan Event</a>.
                         </label>
                     </div>
 
@@ -205,18 +253,14 @@
                     </button>
                 </form>
             </div>
-
-            <!-- Trust Indicators -->
-            <div class="flex justify-center gap-4 text-xs text-gray-500 mt-8">
-                <div class="flex items-center gap-1"><i class="fa-solid fa-shield-halved"></i> Secure Data</div>
-                <div class="flex items-center gap-1"><i class="fa-solid fa-bolt"></i> Instant Process</div>
-            </div>
         </div>
 
         <!-- Spinner Section (Hidden Initially) -->
         <div id="spinner-section" class="hidden w-full text-center animate-fade-in pb-10">
-            <h2 class="ff-header text-2xl mb-2 text-white">TEST KEBERUNTUNGANMU</h2>
-            <p class="text-sm text-gray-400 mb-8">Klik tombol spin di bawah!</p>
+            <h2 class="ff-header text-2xl mb-2 text-white">PUTAR & MENANGKAN!</h2>
+            <p class="text-xs text-gray-400 mb-6 bg-gray-900 inline-block px-3 py-1 rounded border border-gray-800">
+                <i class="fa-solid fa-circle-info text-blue-400 mr-1"></i>Hadiah langsung masuk list pemenang
+            </p>
 
             <div class="wheel-container mb-8 bg-black">
                 <div class="marker"></div>
@@ -224,8 +268,8 @@
                     <!-- Segments injected by JS -->
                 </div>
                 <!-- Center Hub -->
-                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-14 h-14 bg-gradient-to-b from-orange-500 to-red-600 rounded-full border-4 border-[#222] shadow-lg z-20 flex items-center justify-center">
-                    <i class="fa-solid fa-star text-white text-sm"></i>
+                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-gradient-to-b from-orange-500 to-red-600 rounded-full border-4 border-[#222] shadow-lg z-20 flex items-center justify-center">
+                    <img src="https://cdn-icons-png.flaticon.com/512/666/666201.png" class="w-8 h-8 opacity-90 drop-shadow-md invert" alt="logo">
                 </div>
             </div>
 
@@ -234,8 +278,8 @@
                 <div class="absolute inset-0 bg-white/20 transform -translate-x-full group-hover:translate-x-full transition-transform duration-500 skew-x-12"></div>
             </button>
             
-            <div class="mt-6 text-xs text-gray-500 font-mono">
-                UID Sesi: <span id="session-uid">Generating...</span>
+            <div class="mt-6 text-xs text-gray-600 font-mono">
+                Connection: <span class="text-green-500">Secure (Firebase)</span>
             </div>
         </div>
 
@@ -243,10 +287,9 @@
 
     <!-- Footer -->
     <footer class="w-full p-6 bg-black text-center border-t border-gray-800 mt-auto relative z-10">
-        <p class="text-xs text-gray-500">© 2023 BozelGaming Event. Not affiliated with Garena FreeFire.</p>
+        <p class="text-xs text-gray-500">© 2023 BozelGaming. Not affiliated with Garena.</p>
         <div class="flex justify-center gap-4 mt-2 text-xs text-gray-600">
             <a href="#" onclick="togglePrivacy(); return false;" class="hover:text-white">Terms & Privacy</a>
-            <a href="#" class="hover:text-white">Contact</a>
         </div>
     </footer>
 
@@ -258,11 +301,9 @@
                 <button onclick="togglePrivacy()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             <div class="p-6 overflow-y-auto text-sm text-gray-300 space-y-4">
-                <p><strong>1. Pengumpulan Data</strong><br>Kami mengumpulkan Nama dan Nomor WhatsApp untuk keperluan verifikasi pemenang event giveaway ini.</p>
-                <p><strong>2. Penggunaan Data</strong><br>Nomor WhatsApp digunakan untuk menghubungi pemenang. Kami tidak menjual data Anda ke pihak ketiga.</p>
-                <p><strong>3. Hadiah</strong><br>Keputusan sistem bersifat mutlak. Hadiah Diamond akan dikirimkan dalam waktu 1x24 jam setelah konfirmasi.</p>
-                <p><strong>4. Abuse</strong><br>Kecurangan seperti penggunaan VPN atau bot akan mengakibatkan diskualifikasi.</p>
-                <p><strong>5. Disclaimer</strong><br>Event ini diselenggarakan oleh BozelGaming dan tidak berafiliasi resmi dengan Garena.</p>
+                <p><strong>1. Data Pribadi</strong><br>Nomor WhatsApp hanya digunakan untuk konfirmasi pengiriman Diamond. Data disimpan aman di server Firebase.</p>
+                <p><strong>2. Real-time Display</strong><br>Nama panggilan (Nickname) dan hadiah yang didapat akan ditampilkan di halaman utama sebagai transparansi pemenang.</p>
+                <p><strong>3. Aturan Main</strong><br>Dilarang menggunakan bot/VPN. Kecurangan = Banned permanen dari event selanjutnya.</p>
             </div>
             <div class="p-4 border-t border-gray-800">
                 <button onclick="togglePrivacy()" class="w-full bg-gray-800 hover:bg-gray-700 text-white py-3 rounded font-bold">Tutup</button>
@@ -293,321 +334,72 @@
                     </div>
 
                     <p class="text-xs text-gray-400 mb-6 px-4">
-                        Kami akan menghubungi nomor WhatsApp <span id="confirm-wa" class="text-white font-bold">...</span> dalam 1x24 jam untuk konfirmasi pengiriman.
+                        Kami akan menghubungi nomor WhatsApp <span id="confirm-wa" class="text-white font-bold">...</span> dalam 1x24 jam.
                     </p>
 
                     <div class="space-y-3">
                         <button onclick="sendWANotification()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-lg shadow-green-900/50">
-                            <i class="fa-brands fa-whatsapp"></i> Konfirmasi via WA
+                            <i class="fa-brands fa-whatsapp"></i> Konfirmasi Hadiah
                         </button>
-                        <p class="text-[10px] text-gray-600">ID Transaksi: <span id="tx-id">...</span></p>
+                        <p class="text-[10px] text-gray-600">Simpan bukti ini jika admin belum menghubungi.</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Admin Panel (Hidden) -->
+    <!-- Admin Panel (Updated for Firebase) -->
     <div id="admin-panel" class="hidden fixed inset-0 bg-black z-[70] p-4 overflow-y-auto">
         <div class="max-w-4xl mx-auto">
             <div class="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
-                <h2 class="text-2xl font-bold text-orange-500">Admin Panel <span class="text-xs text-gray-500 bg-gray-900 px-2 py-1 rounded ml-2">Server Simulation</span></h2>
+                <h2 class="text-2xl font-bold text-orange-500">Admin <span class="text-white">Firebase</span></h2>
                 <button onclick="toggleAdmin()" class="text-red-500 hover:text-red-400"><i class="fa-solid fa-xmark text-2xl"></i></button>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Prize Configuration -->
-                <div class="bg-gray-900 p-4 rounded-lg border border-gray-800">
-                    <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-sliders"></i> Prize Probability (Weights)</h3>
-                    <div id="prize-config" class="space-y-3 text-sm">
-                        <!-- Injected by JS -->
-                    </div>
-                    <button onclick="saveConfig()" class="mt-4 w-full bg-blue-600 hover:bg-blue-500 py-2 rounded text-white text-xs font-bold">SAVE CONFIG</button>
-                </div>
-
                 <!-- Data Logs -->
-                <div class="bg-gray-900 p-4 rounded-lg border border-gray-800">
-                    <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-database"></i> Submission Logs</h3>
+                <div class="bg-gray-900 p-4 rounded-lg border border-gray-800 md:col-span-2">
+                    <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-database"></i> Live Database Entries</h3>
                     <div class="flex justify-between mb-2">
-                        <span class="text-xs text-gray-500" id="log-count">0 Entries</span>
+                        <span class="text-xs text-gray-500" id="log-count">Connecting...</span>
                         <button onclick="exportCSV()" class="text-xs text-green-500 hover:underline">Export CSV</button>
                     </div>
-                    <div class="h-64 overflow-y-auto bg-black rounded border border-gray-800 p-2 font-mono text-xs" id="data-logs">
-                        <!-- Logs injected here -->
-                        <div class="text-gray-600 italic text-center mt-10">No data yet.</div>
+                    <div class="h-96 overflow-y-auto bg-black rounded border border-gray-800 p-2 font-mono text-xs" id="data-logs">
+                        <div class="text-center mt-10 text-gray-600">Waiting for data...</div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Script -->
-    <script>
-        // --- CONFIGURATION & STATE ---
-        const prizes = [
-            { id: 1, label: "500 💎", value: 500, color: "#FF4500", weight: 5 },     // Red Orange
-            { id: 2, label: "355 💎", value: 355, color: "#FF8C00", weight: 10 },    // Dark Orange
-            { id: 3, label: "140 💎", value: 140, color: "#FFD700", weight: 20 },    // Gold
-            { id: 4, label: "100 💎", value: 100, color: "#32CD32", weight: 30 },    // Lime Green
-            { id: 5, label: "70 💎", value: 70, color: "#1E90FF", weight: 35 }       // Dodger Blue
-        ];
-
-        let userData = {
-            nickname: '',
-            whatsapp: '',
-            sessionUid: '',
-            ip: '127.0.0.1' 
-        };
-
-        let hasSpun = false;
-
-        // --- INITIALIZATION ---
-        document.addEventListener('DOMContentLoaded', () => {
-            initWheel();
-            checkPreviousSpin();
-            renderAdminConfig();
-            renderAdminLogs();
-            
-            userData.sessionUid = 'SES-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-            document.getElementById('session-uid').innerText = userData.sessionUid;
-        });
-
-        function initWheel() {
-            const wheel = document.getElementById('wheel');
-            const segmentAngle = 360 / prizes.length;
-
-            // Create text segments
-            prizes.forEach((prize, index) => {
-                const segment = document.createElement('div');
-                segment.className = 'wheel-segment';
-                // Rotate segment to its slice
-                segment.style.transform = `rotate(${index * segmentAngle}deg) skewY(-${90 - segmentAngle}deg)`;
-                
-                const content = document.createElement('div');
-                content.className = 'segment-content';
-                // Unskew and rotate text to be readable
-                content.style.transform = `skewY(${90 - segmentAngle}deg) rotate(${segmentAngle / 2}deg) translate(80px) rotate(90deg)`;
-                
-                content.innerHTML = `<i class="fa-regular fa-gem mb-1 block text-lg"></i>${prize.label}`;
-                
-                segment.appendChild(content);
-                wheel.appendChild(segment);
-            });
-            
-            // Create Conic Gradient for the background
-            let gradient = `conic-gradient(`;
-            prizes.forEach((p, i) => {
-                const start = (i * 100) / prizes.length;
-                const end = ((i + 1) * 100) / prizes.length;
-                gradient += `${p.color} ${start}%, ${p.color} ${end}%${i === prizes.length - 1 ? '' : ','}`;
-            });
-            gradient += `)`;
-            wheel.style.background = gradient;
-        }
-
-        function checkPreviousSpin() {
-            const saved = localStorage.getItem('ff_event_done');
-            if (saved) {
-                console.log("User returning: " + saved);
-            }
-        }
-
-        function togglePrivacy() {
-            const modal = document.getElementById('privacy-modal');
-            modal.classList.toggle('hidden');
-        }
-
-        // --- APP FLOW ---
-
-        function handleRegistration(e) {
-            e.preventDefault();
-            
-            const nickname = document.getElementById('nickname').value;
-            const whatsapp = document.getElementById('whatsapp').value;
-
-            if (!whatsapp.startsWith('62')) {
-                alert("Nomor WhatsApp harus berawalan 62. Contoh: 628123456789");
-                return;
-            }
-
-            if (localStorage.getItem('ff_event_done')) {
-                 alert("Anda sudah melakukan spin sebelumnya. Satu nomor/perangkat hanya boleh 1x.");
-                 // Proceeding for demo purposes but marking as re-entry
-            }
-
-            userData.nickname = nickname;
-            userData.whatsapp = whatsapp;
-
-            document.getElementById('landing-section').classList.add('hidden');
-            document.getElementById('spinner-section').classList.remove('hidden');
-            
-            logData("REGISTER", { name: nickname, wa: whatsapp });
-        }
-
-        function startSpin() {
-            if (hasSpun) return;
-            hasSpun = true;
-            
-            const btn = document.getElementById('spin-btn');
-            btn.disabled = true;
-            btn.innerText = "SPINNING...";
-
-            const resultIndex = weightedRandom(prizes);
-            const resultPrize = prizes[resultIndex];
-            
-            // Calculate rotation
-            const segmentAngle = 360 / prizes.length;
-            
-            // To center the selected segment at the TOP (0 degrees for marker):
-            // The wheel rotates Clockwise.
-            // Segment 0 is at [0, 72]. Center 36.
-            // To get Segment 0 center to Top (0), we rotate -36deg (or 324).
-            // Formula: Total Rotation = (Spins * 360) - (Index * SegmentAngle) - (SegmentAngle/2)
-            const spins = 5; 
-            const stopAngle = (360 * spins) - (resultIndex * segmentAngle) - (segmentAngle / 2); 
-            
-            const wheel = document.getElementById('wheel');
-            wheel.style.transform = `rotate(${stopAngle}deg)`;
-
-            setTimeout(() => {
-                showResult(resultPrize);
-            }, 4500); // 4s CSS transition + buffer
-
-            saveToBackend(resultPrize);
-        }
-
-        function weightedRandom(items) {
-            const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
-            let random = Math.random() * totalWeight;
-            
-            for (let i = 0; i < items.length; i++) {
-                if (random < items[i].weight) {
-                    return i;
-                }
-                random -= items[i].weight;
-            }
-            return 0;
-        }
-
-        function showResult(prize) {
-            const modal = document.getElementById('result-modal');
-            const content = document.getElementById('modal-content');
-            
-            document.getElementById('prize-display').innerText = prize.label;
-            document.getElementById('confirm-wa').innerText = userData.whatsapp;
-            document.getElementById('tx-id').innerText = "TX-" + Date.now().toString().substr(-6);
-
-            modal.classList.remove('hidden');
-            void modal.offsetWidth; 
-            modal.classList.remove('opacity-0');
-            content.classList.remove('scale-90');
-            content.classList.add('scale-100');
-            
-            localStorage.setItem('ff_event_done', 'true');
-        }
-
-        function sendWANotification() {
-            const text = `Halo Admin, saya menang ${document.getElementById('prize-display').innerText} di event FreeFire! ID: ${document.getElementById('tx-id').innerText}. Mohon proses.`;
-            // Ideally link to a real WA API if owner number is known
-            // window.open(`https://wa.me/6285141380917?text=${encodeURIComponent(text)}`);
-            alert("Membuka WhatsApp...\n(Simulasi: " + text + ")");
-            window.location.reload();
-        }
-
-        // --- BACKEND SIMULATION ---
-
-        function saveToBackend(prize) {
-            const entry = {
-                timestamp: new Date().toISOString(),
-                nickname: userData.nickname,
-                whatsapp: userData.whatsapp,
-                prize: prize.label,
-                prizeValue: prize.value,
-                ip: userData.ip,
-                session: userData.sessionUid
-            };
-
-            let db = JSON.parse(localStorage.getItem('ff_db_entries') || '[]');
-            db.unshift(entry);
-            localStorage.setItem('ff_db_entries', JSON.stringify(db));
-            console.log("Data saved:", entry);
-            renderAdminLogs();
-        }
-
-        function logData(action, details) {
-            console.log(`[AUDIT] ${action}`, details);
-        }
-
-        // --- ADMIN PANEL ---
-
-        function toggleAdmin() {
-            const panel = document.getElementById('admin-panel');
-            if (panel.classList.contains('hidden')) {
-                const pass = prompt("Enter Admin PIN (Default: 1234):");
-                if (pass === "1234") { 
-                    panel.classList.remove('hidden');
-                } else if (pass !== null) {
-                    alert("Access Denied");
-                }
-            } else {
-                panel.classList.add('hidden');
-            }
-        }
-
-        function renderAdminConfig() {
-            const container = document.getElementById('prize-config');
-            container.innerHTML = prizes.map((p, i) => `
-                <div class="flex items-center justify-between bg-black p-2 rounded">
-                    <span class="text-gray-300">${p.label}</span>
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs text-gray-500">Weight:</span>
-                        <input type="number" value="${p.weight}" class="w-16 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-right text-white focus:outline-none focus:border-orange-500">
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function renderAdminLogs() {
-            const db = JSON.parse(localStorage.getItem('ff_db_entries') || '[]');
-            const container = document.getElementById('data-logs');
-            document.getElementById('log-count').innerText = `${db.length} Entries`;
-
-            if (db.length === 0) return;
-
-            container.innerHTML = db.map(row => `
-                <div class="border-b border-gray-800 py-2 hover:bg-gray-900 px-2">
-                    <div class="flex justify-between text-orange-400">
-                        <span>${row.nickname}</span>
-                        <span class="font-bold">${row.prize}</span>
-                    </div>
-                    <div class="flex justify-between text-gray-500 mt-1">
-                        <span>${row.whatsapp}</span>
-                        <span>${new Date(row.timestamp).toLocaleTimeString()}</span>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function saveConfig() {
-            alert("Config saved locally! (Simulated)");
-        }
+    <!-- Script with Firebase Module -->
+    <script type="module">
+        // ==========================================
+        // 1. FIREBASE CONFIGURATION (WAJIB DIISI)
+        // ==========================================
+        // Buka console.firebase.google.com -> Buat Project -> Add Web App
+        // Copy 'firebaseConfig' dan paste di bawah ini menggantikan placeholder.
         
-        function exportCSV() {
-            const db = JSON.parse(localStorage.getItem('ff_db_entries') || '[]');
-            if(db.length === 0) { alert("No data"); return; }
-            
-            const headers = Object.keys(db[0]).join(",");
-            const rows = db.map(obj => Object.values(obj).join(","));
-            const csvContent = "data:text/csv;charset=utf-8," + headers + "\n" + rows.join("\n");
-            
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "ff_event_data.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-    </script>
-</body>
-</html>
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        // --- GANTI BAGIAN INI DENGAN CONFIG ANDA ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDtI5ferhfNg0MvIrPK9dhFln0wqW3BKfQ",
+            authDomain: "bozelgaming-diamond-ff-gratis.firebaseapp.com",
+            projectId: "bozelgaming-diamond-ff-gratis",
+            storageBucket: "bozelgaming-diamond-ff-gratis.firebasestorage.app",
+            messagingSenderId: "145175146392",
+            appId: "1:145175146392:web:d43211150b9b20ae9cc5ed"
+        };
+        // -------------------------------------------
+
+        // Initialize Firebase (Wrap in try-catch to handle missing config gracefully for demo)
+        let db;
+        let isFirebaseActive = false;
+
+        try {
+            // Basic check if config is still placeholder
+            if (firebaseConfig.apiKey === "AIzaSyDtI5ferhfNg0MvIrPK9dhFln0wqW3BKfQ") {
+                console.warn("Firebase Config belum diisi! Menggunakan mode Offline/Local.");
+     
