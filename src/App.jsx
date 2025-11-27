@@ -32,6 +32,11 @@ const firebaseConfig = {
   measurementId: "G-HQC3ZSHQ78"
 };
 
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-spin-app-id';
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? 
+                       JSON.parse(__firebase_config) : {};
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? 
+                         __initial_auth_token : null;
 // --- CSS STYLE ---
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
