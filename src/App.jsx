@@ -511,6 +511,8 @@ function AdminView({ user, appId, db, backToHome, isAuth, setIsAuth, currentPriz
   }
 
   // ... (Kode di atas baris 513 tetap sama)
+
+// --- MULAI DARI BARIS 513 (Bagian AdminPanel) ---
 return (
     <div className="space-y-6 h-full flex flex-col">
       <div className="flex items-center justify-between border-b border-gray-800 pb-4">
@@ -526,7 +528,7 @@ return (
             Pemenang
           </button> 
           
-          {/* TOMBOL 2: Pengaturan Hadiah (TAG PENUTUP DITAMBAHKAN DI SINI) */}
+          {/* TOMBOL 2: Pengaturan Hadiah */}
           <button 
             onClick={() => setActiveTab('settings')}
             className={`px-3 py-1 rounded text-xs ${activeTab === 'settings' ? 'bg-orange-600 text-white' : 'bg-gray-700 text-gray-300'}`}
@@ -534,14 +536,33 @@ return (
             Pengaturan Hadiah
           </button> 
           
-          {/* TOMBOL 3: Kembali ke Beranda (DIPISAHKAN DARI TOMBOL DI ATAS) */}
+          {/* TOMBOL 3: Kembali ke Beranda */}
           <button onClick={backToHome} className="px-3 py-1 rounded text-xs bg-red-600 text-white hover:bg-red-700 transition duration-200">
             Kembali ke Beranda
           </button>
         </div>
       </div>
-      {/* ... Lanjutkan dengan kode di bawah baris 533 di sini ... */}
-    </div>
-);
-// ... (Jangan lupakan penutup fungsi dan komponen di akhir file)
 
+      {/* Tampilkan konten berdasarkan activeTab (Perlu ditambahkan lagi) */}
+      {activeTab === 'entries' && (
+        // Asumsikan ada komponen atau kode di sini
+        <div>Tampilan Pemenang</div>
+      )}
+      {activeTab === 'settings' && (
+        // Asumsikan ada komponen atau kode di sini
+        <div>Tampilan Pengaturan Hadiah</div>
+      )}
+
+    </div>
+  );
+} // <--- PENUTUP FUNGSI AdminPanel (Jika Anda punya fungsi ini)
+
+// --- BARIS PALING AKHIR FILE ANDA (Wajib) ---
+
+// Pastikan di akhir file Anda ada baris ini, JIKA Anda menggunakan default function:
+export default App;
+// ATAU, jika Anda menggunakan: export default function App() { ...
+// Pastikan baris terakhir adalah kurung kurawal penutup
+} 
+
+              
