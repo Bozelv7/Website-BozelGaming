@@ -510,24 +510,38 @@ function AdminView({ user, appId, db, backToHome, isAuth, setIsAuth, currentPriz
     );
   }
 
-  return (
+  // ... (Kode di atas baris 513 tetap sama)
+return (
     <div className="space-y-6 h-full flex flex-col">
       <div className="flex items-center justify-between border-b border-gray-800 pb-4">
         <h2 className="text-xl font-bold flex items-center gap-2">
           <LucideSettings className="w-5 h-5 text-orange-500" /> Dashboard
         </h2>
         <div className="flex gap-2">
+          {/* TOMBOL 1: Pemenang */}
           <button 
             onClick={() => setActiveTab('entries')}
             className={`px-3 py-1 rounded text-xs ${activeTab === 'entries' ? 'bg-orange-600 text-white' : 'bg-gray-700 text-gray-300'}`}
           >
             Pemenang
-          </button>
+          </button> 
+          
+          {/* TOMBOL 2: Pengaturan Hadiah (TAG PENUTUP DITAMBAHKAN DI SINI) */}
           <button 
             onClick={() => setActiveTab('settings')}
             className={`px-3 py-1 rounded text-xs ${activeTab === 'settings' ? 'bg-orange-600 text-white' : 'bg-gray-700 text-gray-300'}`}
           >
             Pengaturan Hadiah
-          <button onClick={backToHome} className="">
-  Kembali ke Beranda
-</button>
+          </button> 
+          
+          {/* TOMBOL 3: Kembali ke Beranda (DIPISAHKAN DARI TOMBOL DI ATAS) */}
+          <button onClick={backToHome} className="px-3 py-1 rounded text-xs bg-red-600 text-white hover:bg-red-700 transition duration-200">
+            Kembali ke Beranda
+          </button>
+        </div>
+      </div>
+      {/* ... Lanjutkan dengan kode di bawah baris 533 di sini ... */}
+    </div>
+);
+// ... (Jangan lupakan penutup fungsi dan komponen di akhir file)
+
