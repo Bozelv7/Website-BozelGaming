@@ -35,10 +35,22 @@ const firebaseConfig = {
 };
 // ******************************************************************
 
-// Ini adalah logika untuk menggunakan kunci asli jika di Netlify, atau kunci Canvas jika di Canvas.
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-spin-app-id';
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? 
-                       JSON.parse(__firebase_config) : yourFirebaseConfig; 
+// GANTI semua deklarasi firebaseConfig ganda DENGAN kode ini (hanya 1x di file)
+let firebaseConfig;
+
+if (typeof __firebase_config !== 'undefined') {
+  // __firebase_config diasumsikan string JSON yang di-inject di build env
+  try {
+    firebaseConfig = JSON.parse(__firebase_config);
+  } catch (err) {
+    console.error('Invalid __firebase_config JSON', err);
+    firebaseConfig = yourFirebaseConfig; // fallback
+  }
+} else {
+  firebaseConfig = typeof window !== 'undefined' && window.firebaseConfig
+    ? window.firebaseConfig
+    : yourFirebaseConfig;
+}
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? 
                          __initial_auth_token : null;
 
