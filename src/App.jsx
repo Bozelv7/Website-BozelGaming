@@ -35,11 +35,13 @@ const firebaseConfig = {
 };
 // ******************************************************************
 
+// Ini adalah logika untuk menggunakan kunci asli jika di Netlify, atau kunci Canvas jika di Canvas.
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-spin-app-id';
 const firebaseConfig = typeof __firebase_config !== 'undefined' ? 
                        JSON.parse(__firebase_config) : yourFirebaseConfig; 
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? 
                          __initial_auth_token : null;
+
 
 // --- CSS STYLE ---
 const styles = `
