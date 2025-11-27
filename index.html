@@ -386,11 +386,11 @@
         // --- GANTI BAGIAN INI DENGAN CONFIG ANDA ---
         const firebaseConfig = {
             apiKey: "AIzaSyDtI5ferhfNg0MvIrPK9dhFln0wqW3BKfQ",
-            authDomain: "bozelgaming-diamond-ff-gratis.firebaseapp.com",
-            projectId: "bozelgaming-diamond-ff-gratis",
-            storageBucket: "bozelgaming-diamond-ff-gratis.firebasestorage.app",
-            messagingSenderId: "145175146392",
-            appId: "1:145175146392:web:d43211150b9b20ae9cc5ed"
+            authDomain: "bozel-event.firebaseapp.com",
+            projectId: "bozel-event",
+            storageBucket: "bozel-event.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
         };
         // -------------------------------------------
 
@@ -402,4 +402,6 @@
             // Basic check if config is still placeholder
             if (firebaseConfig.apiKey === "AIzaSyDtI5ferhfNg0MvIrPK9dhFln0wqW3BKfQ") {
                 console.warn("Firebase Config belum diisi! Menggunakan mode Offline/Local.");
-     
+            } else {
+                const app = initializeApp(firebaseConfig);
+                db = getFiresto
