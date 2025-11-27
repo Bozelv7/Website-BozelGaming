@@ -560,6 +560,3 @@ return (
 }  // <-- Ini MENUTUP fungsi AdminPanel (benar)
 
 // *** TIDAK ADA APA-APA SETELAH INI, selain penutup App ***
- // penutup function App
-
-export default App;
