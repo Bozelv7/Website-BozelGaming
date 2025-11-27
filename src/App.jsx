@@ -528,5 +528,9 @@ function AdminView({ user, appId, db, backToHome, isAuth, setIsAuth, currentPriz
             className={`px-3 py-1 rounded text-xs ${activeTab === 'settings' ? 'bg-orange-600 text-white' : 'bg-gray-700 text-gray-300'}`}
           >
             Pengaturan Hadiah
-          </button>
-          <button onClick={backToHome} cl
+          <button
+              onClick={backToHome}
+              className="mt-4 w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition duration-200"
+            >
+              Kembali ke Beranda
+            </button>
