@@ -7,8 +7,8 @@
 </head>
 <body>
 <div id="root"></div>
-<!-- PERBAIKAN: Menggunakan jalur relatif (./src/App.jsx) untuk mengatasi Rollup/Vite error saat proses build. -->
-<!-- File App.jsx berada di dalam folder 'src', dan index.html ada di root. -->
-<script type="module" src="./src/App.jsx"></script>
+<!-- PERBAIKAN FINAL: Mengganti entry point ke main.jsx -->
+<!-- main.jsx adalah file standar yang diperlukan untuk menjalankan aplikasi React di Vite. -->
+<script type="module" src="/src/main.jsx"></script>
 </body>
 </html>
